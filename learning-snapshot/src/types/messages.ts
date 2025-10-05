@@ -1,0 +1,41 @@
+// Defines the command types for messages.
+export type MessageType =
+  // Snapshot Commands
+  | 'CAPTURE_SNAPSHOT'
+  | 'GET_SNAPSHOT'
+  | 'LIST_SNAPSHOTS'
+  | 'DELETE_SNAPSHOT'
+
+  // Translation Commands
+  | 'TRANSLATE_TEXT'
+
+  // AI Commands
+  | 'EXPLAIN_TERM'
+  | 'GENERATE_NOTE'
+
+  // Export Commands
+  | 'EXPORT_TO_OBSIDIAN'
+
+  // Settings Commands
+  | 'GET_SETTINGS'
+  | 'UPDATE_SETTINGS';
+
+/**
+ * The basic structure for a message sent between components.
+ * The payload's type depends on the message type.
+ */
+export interface Message<T = any> {
+  type: MessageType;
+  payload?: T;
+  requestId?: string; // Optional ID to correlate requests and responses
+}
+
+/**
+ * The structure for a response to a message.
+ */
+export interface MessageResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  requestId?: string; // Echoes the original requestId
+}
