@@ -1,26 +1,17 @@
 import { messageRouter } from './messageRouter';
+import type { Message } from '../types/messages';
 
 console.log('Background service worker started.');
 
-/**
- * Listens for messages from other parts of the extension.
- *
- * IMPORTANT: We must return `true` from this event listener to indicate
- * that we will be sending a response asynchronously. This keeps the
- * message channel open.
- */
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Received message:', message);
+chrome.runtime.onMessage.addListener(
+  (message: Message, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+    console.log('Received message:', message);
+    messageRouter.route(message).then(sendResponse);
+    return true;
+  }
+);
 
-  // Route the message and send the response back asynchronously.
-  messageRouter.route(message).then(sendResponse);
-
-  // Return true to indicate an async response.
-  return true;
-});
-
-// Optional: Add a listener for when the extension is installed or updated.
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener((details: chrome.runtime.InstalledDetails) => {
   if (details.reason === 'install') {
     console.log('Learning Snapshot extension installed.');
   } else if (details.reason === 'update') {

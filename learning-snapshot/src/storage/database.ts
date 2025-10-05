@@ -1,27 +1,9 @@
-import Dexie, { Table } from 'dexie';
+import type { Table } from 'dexie';
+import Dexie from 'dexie';
+import type { Snapshot, Annotation } from './models/Snapshot';
+import type { Category } from './models/Category';
 
-// Define your data models here (will be fleshed out later)
-// NOTE: These are placeholder interfaces. They will be defined in detail in `storage/models`.
-export interface Snapshot {
-  id: string;
-  title: string;
-  url: string;
-  createdAt: string;
-  // ... other fields
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  // ... other fields
-}
-
-export interface Annotation {
-  id: string;
-  snapshotId: string;
-  // ... other fields
-}
-
+// This interface is only used within the DB layer, so it can stay here.
 export interface TranslationCache {
   id?: number;
   text: string;
@@ -41,9 +23,11 @@ class SnapshotDatabase extends Dexie {
     super('LearningSnapshotDB');
 
     this.version(1).stores({
-      snapshots: 'id, title, url, *categories, createdAt, rating',
-      categories: 'id, name, parentId',
-      annotations: 'id, snapshotId, type, createdAt',
+      // Define the schema for Dexie. The '&' indicates a primary key.
+      // The '*' indicates a multi-entry index for arrays.
+      snapshots: '&id, title, url, *categories, createdAt, rating',
+      categories: '&id, name, parentId',
+      annotations: '&id, snapshotId, type, createdAt',
       translations: '[text+from+to], timestamp'
     });
   }

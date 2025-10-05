@@ -2,9 +2,11 @@
 export type MessageType =
   // Snapshot Commands
   | 'CAPTURE_SNAPSHOT'
-  | 'GET_SNAPSHOT'
+  | 'GET_SNAPSHOT' // Get a single snapshot by ID
   | 'LIST_SNAPSHOTS'
   | 'DELETE_SNAPSHOT'
+  | 'SAVE_SNAPSHOT_DATA' // Internal: sent from content script to background
+  | 'CAPTURE_SNAPSHOT_REQUEST' // Internal: sent from background to content script
 
   // Translation Commands
   | 'TRANSLATE_TEXT'
@@ -14,7 +16,7 @@ export type MessageType =
   | 'GENERATE_NOTE'
 
   // Export Commands
-  | 'EXPORT_TO_OBSIDIAN'
+  | 'EXPORT_TO_OBSIDIAN' // Payload will be the full snapshot object
 
   // Settings Commands
   | 'GET_SETTINGS'

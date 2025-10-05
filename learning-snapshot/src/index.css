@@ -51,10 +51,9 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  /*
+    Applying styles to the body here that depend on CSS variables
+    defined in this same layer causes build issues with Tailwind.
+    These styles are applied in the root component of each UI instead.
+  */
 }

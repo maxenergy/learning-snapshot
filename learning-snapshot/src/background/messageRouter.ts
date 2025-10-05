@@ -1,5 +1,9 @@
-import { Message, MessageResponse, MessageType } from '../types/messages';
+import type { Message, MessageResponse, MessageType } from '../types/messages';
 import { snapshotRepository } from '../storage/repositories/SnapshotRepository';
+import { translationService } from '../services/translation/TranslationService';
+import type { TranslateParams } from '../types/translation';
+import { exportService } from '../services/export/ExportService';
+import type { Snapshot } from '../storage/models/Snapshot';
 
 // A type for the function that handles a specific message.
 type MessageHandler = (payload: any) => Promise<any>;
@@ -24,18 +28,43 @@ class MessageRouter {
       return snapshotRepository.findAll();
     });
 
-    // Placeholder handlers for other core actions.
-    // These will be implemented in later phases.
-    this.handlers.set('CAPTURE_SNAPSHOT', async (payload) => {
-      console.log('Placeholder for CAPTURE_SNAPSHOT', payload);
-      // In the future, this will call the ContentExtractor and save a snapshot.
-      return { status: 'captured', id: crypto.randomUUID() };
+    this.handlers.set('GET_SNAPSHOT', async (payload: string) => {
+      console.log(`Handling GET_SNAPSHOT message for ID: ${payload}`);
+      return snapshotRepository.findById(payload);
     });
 
-    this.handlers.set('TRANSLATE_TEXT', async (payload) => {
-      console.log('Placeholder for TRANSLATE_TEXT', payload);
-      // In the future, this will call the TranslationService.
-      return { translatedText: `Translated: ${payload.text}` };
+    this.handlers.set('CAPTURE_SNAPSHOT', async () => {
+      console.log('Routing CAPTURE_SNAPSHOT message');
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab && tab.id) {
+        // Send a message to the content script in the active tab
+        await chrome.tabs.sendMessage(tab.id, { type: 'CAPTURE_SNAPSHOT_REQUEST' });
+        return { status: 'request_sent' };
+      } else {
+        throw new Error('No active tab found to capture.');
+      }
+    });
+
+    // This handler will receive the extracted data from the content script
+    this.handlers.set('SAVE_SNAPSHOT_DATA', async (payload) => {
+      console.log('Routing SAVE_SNAPSHOT_DATA message');
+      // The payload is the Omit<Snapshot, ...> object from the extractor
+      const newSnapshot = await snapshotRepository.create(payload);
+      console.log('Snapshot saved with ID:', newSnapshot.id);
+      return newSnapshot;
+    });
+
+    this.handlers.set('TRANSLATE_TEXT', async (payload: TranslateParams) => {
+      console.log('Handling TRANSLATE_TEXT message:', payload);
+      // Default to Ollama if no provider is specified
+      const finalPayload = { ...payload, provider: payload.provider || 'ollama' };
+      return translationService.translate(finalPayload);
+    });
+
+    this.handlers.set('EXPORT_TO_OBSIDIAN', async (payload: Snapshot) => {
+      console.log(`Handling EXPORT_TO_OBSIDIAN message for ID: ${payload.id}`);
+      await exportService.exportSnapshotToMarkdown(payload);
+      return { success: true };
     });
   }
 

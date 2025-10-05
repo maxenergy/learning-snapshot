@@ -1,5 +1,5 @@
 import { db } from '../database';
-import { Snapshot } from '../models/Snapshot';
+import type { Snapshot } from '../models/Snapshot';
 
 class SnapshotRepository {
   /**
@@ -61,7 +61,7 @@ class SnapshotRepository {
       .filter(s =>
         s.title.toLowerCase().includes(lowerQuery) ||
         s.content.text.toLowerCase().includes(lowerQuery) ||
-        (s.metadata.description && s.metadata.description.toLowerCase().includes(lowerQuery))
+        !!(s.metadata.description && s.metadata.description.toLowerCase().includes(lowerQuery))
       )
       .toArray();
   }
