@@ -1,14 +1,16 @@
 import { db } from '../../storage/database';
 import type { TranslateParams, TranslationProvider, TranslationResult } from '../../types/translation';
 import { OllamaProvider } from './OllamaProvider';
+import { OpenAIProvider } from './OpenAIProvider'; // Import the new provider
 
 class TranslationService {
   private providers: Map<string, TranslationProvider>;
 
   constructor() {
     this.providers = new Map();
-    // Register the available providers. More can be added here in the future.
+    // Register all available providers
     this.registerProvider(new OllamaProvider());
+    this.registerProvider(new OpenAIProvider());
   }
 
   /**
@@ -101,6 +103,31 @@ class TranslationService {
    */
   public splitIntoParagraphs(text: string): string[] {
     return text.split(/\n+/).filter(p => p.trim().length > 0);
+  }
+
+  /**
+   * Translates an array of paragraphs in parallel.
+   * @param paragraphs - The array of text paragraphs to translate.
+   * @param params - The translation parameters (provider, from, to).
+   * @returns A promise that resolves to an array of translation results.
+   */
+  async batchTranslate(
+    paragraphs: string[],
+    params: Omit<TranslateParams, 'text'>
+  ): Promise<TranslationResult[]> {
+    console.log(`Batch translating ${paragraphs.length} paragraphs using ${params.provider}`);
+
+    // Create an array of promises, each one translating a single paragraph.
+    const translationPromises = paragraphs.map(p =>
+      this.translate({ ...params, text: p })
+    );
+
+    // Wait for all translations to complete.
+    // Promise.all will execute them in parallel.
+    const results = await Promise.all(translationPromises);
+
+    console.log('Batch translation completed.');
+    return results;
   }
 }
 

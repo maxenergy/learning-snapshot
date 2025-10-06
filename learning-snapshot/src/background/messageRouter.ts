@@ -1,5 +1,5 @@
 import type { Message, MessageResponse, MessageType } from '../types/messages';
-import { snapshotRepository } from '../storage/repositories/SnapshotRepository';
+import { snapshotService } from '../services/snapshot/SnapshotService'; // Use the service
 import { translationService } from '../services/translation/TranslationService';
 import type { TranslateParams } from '../types/translation';
 import { exportService } from '../services/export/ExportService';
@@ -22,15 +22,21 @@ class MessageRouter {
    * This is where the business logic for each message type is defined.
    */
   private registerHandlers() {
-    // Register a handler for listing snapshots.
+    // --- Snapshot Handlers ---
     this.handlers.set('LIST_SNAPSHOTS', async () => {
-      console.log('Handling LIST_SNAPSHOTS message');
-      return snapshotRepository.findAll();
+      console.log('Routing LIST_SNAPSHOTS to service');
+      return snapshotService.getAllSnapshots();
     });
 
     this.handlers.set('GET_SNAPSHOT', async (payload: string) => {
-      console.log(`Handling GET_SNAPSHOT message for ID: ${payload}`);
-      return snapshotRepository.findById(payload);
+      console.log(`Routing GET_SNAPSHOT to service for ID: ${payload}`);
+      return snapshotService.getSnapshot(payload);
+    });
+
+    this.handlers.set('DELETE_SNAPSHOT', async (payload: string) => {
+      console.log(`Routing DELETE_SNAPSHOT to service for ID: ${payload}`);
+      await snapshotService.deleteSnapshot(payload);
+      return { success: true, id: payload };
     });
 
     this.handlers.set('CAPTURE_SNAPSHOT', async () => {
@@ -45,12 +51,11 @@ class MessageRouter {
       }
     });
 
-    // This handler will receive the extracted data from the content script
-    this.handlers.set('SAVE_SNAPSHOT_DATA', async (payload) => {
-      console.log('Routing SAVE_SNAPSHOT_DATA message');
-      // The payload is the Omit<Snapshot, ...> object from the extractor
-      const newSnapshot = await snapshotRepository.create(payload);
-      console.log('Snapshot saved with ID:', newSnapshot.id);
+    // This handler receives the extracted data from the content script
+    this.handlers.set('SAVE_SNAPSHOT_DATA', async (payload: Omit<Snapshot, 'id' | 'createdAt' | 'updatedAt'>) => {
+      console.log('Routing SAVE_SNAPSHOT_DATA to service');
+      const newSnapshot = await snapshotService.createSnapshot(payload);
+      console.log('MessageRouter: Snapshot saved with ID:', newSnapshot.id);
       return newSnapshot;
     });
 

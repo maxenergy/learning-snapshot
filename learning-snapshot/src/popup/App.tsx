@@ -47,6 +47,20 @@ function App() {
     await chrome.sidePanel.open({ windowId: (await chrome.windows.getCurrent()).id });
   };
 
+  const handleDelete = (snapshotId: string) => {
+    // Optimistically remove the snapshot from the UI
+    setSnapshots(prev => prev.filter(s => s.id !== snapshotId));
+
+    // Send a message to the background to delete the snapshot from the database
+    chrome.runtime.sendMessage({ type: 'DELETE_SNAPSHOT', payload: snapshotId }, (response) => {
+      if (chrome.runtime.lastError || !response.success) {
+        console.error('Failed to delete snapshot:', chrome.runtime.lastError?.message || response.error);
+        // If deletion fails, we should probably add the snapshot back to the list or show an error.
+        // For now, we'll just log the error. A robust implementation would refetch the list.
+      }
+    });
+  };
+
   return (
     <div className="w-80 p-4 bg-background text-foreground" style={{ minHeight: '20rem' }}>
       <h1 className="text-xl font-bold mb-4">Learning Snapshot</h1>
@@ -69,12 +83,20 @@ function App() {
             {snapshots.slice(0, 5).map((snapshot) => ( // Show latest 5
               <li key={snapshot.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
                 <span className="truncate flex-1 pr-2">{snapshot.title}</span>
-                <button
-                  onClick={() => handleViewSnapshot(snapshot.id)}
-                  className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
-                >
-                  View
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleViewSnapshot(snapshot.id)}
+                    className="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleDelete(snapshot.id)}
+                    className="px-3 py-1 text-sm bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/80"
+                  >
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

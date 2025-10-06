@@ -6,6 +6,7 @@ import manifest from './public/manifest.json'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './', // Use relative paths for assets in the build output
   plugins: [
     react(),
     crx({ manifest }),
